@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Login | Stackly</title><meta name="theme-color" content="#08142F">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/dash.css"></head><body>
+<div class="lg">
+  <aside class="lg-art">
+    <div><a href="index.html"><img class="logo" src="https://wsrv.nl/?url=https://snabsolutions.in/wp-content/uploads/2026/02/stackly-snab-solutions.png&w=280&output=webp&q=85&fit=cover" alt="Stackly by Snab Solutions" width="140" height="46"></a>
+      <h1>Your credit journey, in one place.</h1>
+      <p>Track disputes, upload documents, book advisor calls and watch your score climb. Admins manage every client from a single dashboard.</p>
+      <ul><li>Live dispute tracking</li><li>Secure document locker</li><li>Direct chat with your advisor</li></ul></div>
+    <small>&copy; Stackly by Snab Solutions, Bengaluru</small>
+  </aside>
+  <main class="lg-form"><div class="lg-card">
+    <a class="lg-mob" href="index.html"><img src="https://wsrv.nl/?url=https://snabsolutions.in/wp-content/uploads/2026/02/stackly-snab-solutions.png&w=280&output=webp&q=85&fit=cover" alt="Stackly" width="120" height="40"></a>
+    <a class="back" href="index.html">&larr; Back to website</a>
+    <h2>Welcome back</h2><p class="sub">Choose how you want to sign in.</p>
+    <div class="seg" role="tablist" aria-label="Login type">
+      <button type="button" role="tab" data-role="client" class="on" aria-selected="true"><b>Client login</b><small>Track my credit case</small></button>
+      <button type="button" role="tab" data-role="admin" aria-selected="false"><b>Admin login</b><small>Manage clients</small></button>
+    </div>
+    <div class="err" id="err" role="alert"></div>
+    <form id="f" novalidate>
+      <div class="fld"><label for="lid" id="lidL">Email or Login ID</label><input id="lid" autocomplete="username" placeholder="you@example.com" autocapitalize="none" spellcheck="false"></div>
+      <div class="fld"><label for="pw">Password</label><div class="pw"><input id="pw" type="password" autocomplete="current-password" placeholder="Enter your password"><button type="button" id="eye">Show</button></div></div>
+      <div class="lg-foot" style="margin:0 0 18px"><label class="chk"><input type="checkbox" id="rem"> Remember me</label><button type="button" class="lnk" id="forgot">Forgot password?</button></div>
+      <button class="btn btn-gold" type="submit">Sign in</button>
+    </form>
+    <div class="demo" id="demo"></div>
+    <div class="lg-foot" id="signup"><span class="hint">New to Stackly?</span><button type="button" class="lnk" id="reg">Create a client account</button></div>
+  </div></main>
+</div>
+<script src="js/auth.js"></script>
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s)}, role='client';
+  var s=Stk.session(); if(s){location.replace(s.role==='admin'?'admin-dashboard.html':'client-dashboard.html');return}
+  var demos={client:{id:'CL1001',pw:'client123'},admin:{id:'ADMIN01',pw:'admin123'}};
+  function setRole(r){
+    role=r;
+    document.querySelectorAll('.seg button').forEach(function(b){var on=b.dataset.role===r;b.classList.toggle('on',on);b.setAttribute('aria-selected',on)});
+    $('#lidL').textContent='Email or Login ID';
+    $('#lid').placeholder='you@example.com';
+    $('#signup').style.display=r==='client'?'flex':'none';
+    $('#forgot').style.display=r==='client'?'inline':'none';
+    $('#demo').innerHTML='<b>Any email and password works</b><br>Or try the demo '+r+' account:<br>Login ID: <code>'+demos[r].id+'</code> &nbsp; Password: <code>'+demos[r].pw+'</code> <button type="button" class="lnk" id="fill" style="margin-left:6px">Fill for me</button>';
+    $('#fill').onclick=function(){$('#lid').value=demos[r].id;$('#pw').value=demos[r].pw;$('#err').classList.remove('show')};
+    $('#err').classList.remove('show');
+  }
+  document.querySelectorAll('.seg button').forEach(function(b){b.onclick=function(){setRole(b.dataset.role)}});
+  setRole(new URLSearchParams(location.search).get('next')==='admin'?'admin':'client');
+  $('#eye').onclick=function(){var p=$('#pw'),h=p.type==='password';p.type=h?'text':'password';this.textContent=h?'Hide':'Show'};
+  function showErr(m){var e=$('#err');e.textContent=m;e.classList.add('show')}
+  $('#f').addEventListener('submit',function(e){
+    e.preventDefault();
+    var btn=e.target.querySelector('button[type=submit]'),r=Stk.login(role,$('#lid').value,$('#pw').value,$('#rem').checked);
+    if(!r.ok){showErr(r.msg);return}
+    $('#err').classList.remove('show');btn.disabled=true;btn.textContent='Signing in...';
+    location.replace(role==='admin'?'admin-dashboard.html':'client-dashboard.html');
+  });
+  $('#forgot').onclick=function(){
+    var m=Stk.modal('Reset password','<form id="rf"><p class="hint" style="margin-bottom:14px">Enter your Login ID and the email registered with your account.</p><div class="fld"><label>Login ID</label><input name="lid" required></div><div class="fld"><label>Registered email</label><input name="email" type="email" required></div><div class="fld"><label>New password (min 6 characters)</label><input name="pw" type="password" minlength="6" required></div><div class="err" id="re"></div><div class="mfoot"><button type="button" class="btn btn-line" data-x>Cancel</button><button class="btn btn-gold">Reset password</button></div></form>');
+    m.el.querySelector('#rf').onsubmit=function(e){
+      e.preventDefault();var f=e.target,d=Stk.db(),id=f.elements.lid.value.trim().toUpperCase();
+      var c=d.clients.filter(function(x){return x.id.toUpperCase()===id&&x.email.toLowerCase()===f.elements.email.value.trim().toLowerCase()})[0];
+      if(!c){var er=m.el.querySelector('#re');er.textContent='Login ID and email do not match any account.';er.classList.add('show');return}
+      if(f.elements.pw.value.length<6){var er2=m.el.querySelector('#re');er2.textContent='Password must be at least 6 characters.';er2.classList.add('show');return}
+      c.pass=f.elements.pw.value;Stk.save(d);m.close();$('#lid').value=c.id;$('#pw').value='';Stk.toast('Password updated. You can sign in now.');
+    };
+  };
+  $('#reg').onclick=function(){
+    var m=Stk.modal('Create client account','<form id="gf"><div class="fld"><label>Full name</label><input name="fname" required></div><div class="row2"><div class="fld"><label>Email</label><input name="email" type="email" required></div><div class="fld"><label>Phone</label><input name="phone" inputmode="tel" required></div></div><div class="fld"><label>Password (min 6 characters)</label><input name="pw" type="password" minlength="6" required></div><div class="err" id="ge"></div><div class="mfoot"><button type="button" class="btn btn-line" data-x>Cancel</button><button class="btn btn-gold">Create account</button></div></form>');
+    m.el.querySelector('#gf').onsubmit=function(e){
+      e.preventDefault();var f=e.target,d=Stk.db(),er=m.el.querySelector('#ge');
+      if(d.clients.some(function(x){return x.email.toLowerCase()===f.elements.email.value.trim().toLowerCase()})){er.textContent='An account with this email already exists.';er.classList.add('show');return}
+      if(f.elements.pw.value.length<6){er.textContent='Password must be at least 6 characters.';er.classList.add('show');return}
+      var id=Stk.next(d,'CL');
+      d.clients.push({id:id,name:f.elements.fname.value.trim(),email:f.elements.email.value.trim(),phone:f.elements.phone.value.trim(),pass:f.elements.pw.value,score:600,plan:'Starter',status:'Active',joined:Stk.today()});
+      d.msgs.push({id:Stk.next(d,'M'),cid:id,from:'admin',text:'Welcome to Stackly! Upload your credit report and book a free review call to get started.',ts:Date.now(),read:false});
+      Stk.save(d);
+      m.el.querySelector('.mbody').innerHTML='<p class="cm">Account created. Your Login ID is <b style="font-size:1.2rem;letter-spacing:.05em">'+id+'</b>. Please note it down.</p><div class="mfoot"><button class="btn btn-gold" id="go">Continue to sign in</button></div>';
+      m.el.querySelector('#go').onclick=function(){m.close();setRole('client');$('#lid').value=id;$('#pw').focus()};
+    };
+  };
+})();
+</script></body></html>

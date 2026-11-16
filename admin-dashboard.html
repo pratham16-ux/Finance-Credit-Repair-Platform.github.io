@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Admin Dashboard | Stackly</title><meta name="theme-color" content="#08142F"><meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/dash.css"></head><body>
+<div class="app">
+  <aside class="side" id="side">
+    <a class="logo" href="index.html" title="Back to website"><img src="https://wsrv.nl/?url=https://snabsolutions.in/wp-content/uploads/2026/02/stackly-snab-solutions.png&w=280&output=webp&q=85&fit=cover" alt="Stackly" width="140" height="46"></a>
+    <div class="role">Admin console</div>
+    <div id="nav"></div><div class="sp"></div>
+    <a class="nv" href="index.html" style="display:flex;gap:12px;padding:12px 14px;font-weight:600;border-radius:12px">&#8592; Website</a>
+    <button class="nv lo" id="lo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out</button>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+  <div class="main">
+    <header class="top"><button class="burger" id="bg" aria-label="Menu">&#9776;</button><h1 id="ttl">Overview</h1>
+      <div class="who"><span class="chip">Admin ID: <b id="lid"></b></span><div class="av" id="av"></div></div></header>
+    <main class="view" id="view"></main>
+  </div>
+</div>
+<nav class="bnav" id="bnav" aria-label="Quick navigation"></nav>
+<script src="js/auth.js"></script>
+<script>
+(function(){
+var sess=Stk.guard('admin');if(!sess)return;
+var E=Stk.esc,$=function(s,c){return(c||document).querySelector(s)};
+var ic={
+ overview:'<path d="M3 12l9-9 9 9M5 10v10h14V10"/>',
+ clients:'<circle cx="9" cy="8" r="3.5"/><path d="M2 21a7 7 0 0114 0M16 4.5a3.5 3.5 0 010 7M22 21a7 7 0 00-4-6.3"/>',
+ disputes:'<path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9zM14 3v6h6M8 13h8M8 17h5"/>',
+ appts:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/>',
+ messages:'<path d="M21 12a8 8 0 01-11.6 7.1L3 21l1.9-5.4A8 8 0 1121 12z"/>',
+ settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/>'
+};
+var titles={overview:'Overview',clients:'Clients',disputes:'Disputes',appts:'Appointments',messages:'Messages',settings:'Settings'};
+var cur='overview',cq='',cs='All',dq='',ds='All',as='All',active=null;
+var PLANS=['Starter','Growth','Premium'],CST=['Active','Paused','Suspended'],DST=['Submitted','In review','Resolved','Rejected'];
+function badge(s){return '<span class="badge s-'+Stk.slug(s)+'">'+E(s)+'</span>'}
+function adm(){return Stk.db().admins.filter(function(a){return a.id===sess.id})[0]}
+function cname(d,id){var c=d.clients.filter(function(x){return x.id===id})[0];return c?c.name:id}
+function opts(list,sel){return list.map(function(s){return '<option'+(s===sel?' selected':'')+'>'+E(s)+'</option>'}).join('')}
+
+function bnav(keys,b){
+  var more='<button type="button" id="bmore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="t">More</span></button>';
+  $('#bnav').innerHTML=keys.map(function(k){var s=titles[k].replace('My ','').replace(' Calculator','');return '<button type="button" data-v="'+k+'" class="'+(k===cur?'on':'')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ic[k]+'</svg><span class="t">'+s+'</span>'+(b[k]?'<span class="nb">'+b[k]+'</span>':'')+'</button>'}).join('')+more;
+  $('#bmore').onclick=function(){$('#side').classList.add('open');$('#scrim').classList.add('open')};
+}
+function renderNav(){
+  var d=Stk.db(),um=d.msgs.filter(function(m){return m.from==='client'&&!m.read}).length,pa=d.appts.filter(function(a){return a.status==='Pending'}).length,nd=d.disputes.filter(function(x){return x.status==='Submitted'}).length;
+  var b={messages:um,appts:pa,disputes:nd};
+  $('#nav').innerHTML=Object.keys(titles).map(function(k){
+    return '<button class="nv'+(k===cur?' on':'')+'" data-v="'+k+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ic[k]+'</svg>'+titles[k]+(b[k]?'<span class="nb">'+b[k]+'</span>':'')+'</button>';
+  }).join('');
+  bnav(['overview','clients','disputes','messages'],b);
+}
+function go(v){
+  if(!titles[v])v='overview';cur=v;history.replaceState(null,'','#'+v);
+  var a=adm();if(!a){Stk.logout();return}
+  $('#lid').textContent=a.id;$('#av').textContent=Stk.initials(a.name);$('#ttl').textContent=titles[v];document.title=titles[v]+' | Stackly Admin';
+  $('#view').innerHTML=V[v](a);if(V[v+'_after'])V[v+'_after'](a);
+  renderNav();$('#side').classList.remove('open');$('#scrim').classList.remove('open');window.scrollTo(0,0);
+}
+var V={};
+
+/* ---------- overview ---------- */
+V.overview=function(a){
+  var d=Stk.db(),act=d.clients.filter(function(c){return c.status==='Active'}).length,open=d.disputes.filter(function(x){return x.status==='Submitted'||x.status==='In review'}).length,res=d.disputes.filter(function(x){return x.status==='Resolved'}).length;
+  var pend=d.appts.filter(function(x){return x.status==='Pending'});
+  var price={Starter:1999,Growth:3999,Premium:6999},rev=d.clients.filter(function(c){return c.status==='Active'}).reduce(function(s,c){return s+(price[c.plan]||0)},0);
+  var cols={Submitted:'#D6B266','In review':'#3C50DC',Resolved:'#18C496',Rejected:'#F06E5A'},mx=Math.max(1,d.disputes.length);
+  var bars=DST.map(function(s){var n=d.disputes.filter(function(x){return x.status===s}).length;return '<div class="r"><span>'+s+'</span><div><i style="width:'+(n/mx*100)+'%;background:'+cols[s]+'"></i></div><b>'+n+'</b></div>'}).join('');
+  var rec=d.clients.slice().sort(function(a,b){return a.joined<b.joined?1:-1}).slice(0,4);
+  return '<div class="hello"><div><h2>Welcome, '+E(a.name.split(' ')[0])+'</h2><p>Here is what needs your attention today.</p><span class="id">Signed in as <b>'+E(a.id)+'</b> &middot; Administrator</span></div><div class="qa"><button class="btn btn-gold" data-go="clients" data-add="1">+ Add client</button><button class="btn btn-line" data-go="appts">Review appointments</button></div></div>'+
+  '<div class="grid4"><div class="stat go" data-go="clients"><span>Total clients</span><b>'+d.clients.length+'</b><small>'+act+' active</small></div><div class="stat go" data-go="disputes"><span>Open disputes</span><b>'+open+'</b><small>'+res+' resolved so far</small></div><div class="stat go" data-go="appts"><span>Pending appointments</span><b>'+pend.length+'</b><small>Waiting for approval</small></div><div class="stat"><span>Monthly revenue (est.)</span><b>\u20B9'+rev.toLocaleString('en-IN')+'</b><small>From active plans</small></div></div>'+
+  '<div class="grid2"><div class="card"><h3>Disputes by status</h3><p class="sub">All clients combined.</p><div class="bars">'+bars+'</div></div>'+
+  '<div class="card"><div class="ch"><h3>Pending appointments</h3><button class="btn btn-line btn-sm" data-go="appts">Manage</button></div>'+(pend.length?'<div class="list">'+pend.slice(0,4).map(function(x){return '<div class="li"><div><b>'+E(cname(d,x.cid))+'</b><small>'+E(x.topic)+' &middot; '+Stk.fmtDate(x.date)+', '+E(x.time)+'</small></div><div class="acts"><button class="btn btn-em btn-sm" data-act="ap" data-id="'+x.id+'">Approve</button><button class="btn btn-line btn-sm" data-act="dc" data-id="'+x.id+'">Decline</button></div></div>'}).join('')+'</div>':'<p class="empty">All caught up. No pending requests.</p>')+'</div></div>'+
+  '<div class="card"><div class="ch"><h3>Newest clients</h3><button class="btn btn-line btn-sm" data-go="clients">View all</button></div><div class="list">'+rec.map(function(c){return '<div class="li"><div><b>'+E(c.name)+' <small>('+E(c.id)+')</small></b><small>'+E(c.email)+' &middot; joined '+Stk.fmtDate(c.joined)+'</small></div>'+badge(c.status)+'</div>'}).join('')+'</div></div>';
+};
+
+/* ---------- clients ---------- */
+function clientRows(){
+  var d=Stk.db(),q=cq.toLowerCase();
+  var list=d.clients.filter(function(c){return(cs==='All'||c.status===cs)&&(!q||(c.id+c.name+c.email+c.phone).toLowerCase().indexOf(q)>=0)});
+  $('#ccount').textContent=list.length+' of '+d.clients.length+' clients';
+  $('#cbody').innerHTML=list.length?list.map(function(c){return '<tr><td><b>'+E(c.id)+'</b></td><td><b>'+E(c.name)+'</b><span class="sm">'+E(c.email)+' &middot; '+E(c.phone)+'</span></td><td>'+c.score+'</td><td>'+E(c.plan)+'</td><td>'+badge(c.status)+'</td><td><div class="acts"><button class="btn btn-line btn-sm" data-act="vc" data-id="'+c.id+'">View</button><button class="btn btn-line btn-sm" data-act="ec" data-id="'+c.id+'">Edit</button><button class="btn btn-line btn-sm" data-act="xc" data-id="'+c.id+'">Delete</button></div></td></tr>'}).join(''):'<tr><td colspan="6" class="empty">No clients match your search.</td></tr>';
+}
+V.clients=function(){
+  return '<div class="card"><div class="ch"><div><h3>Client directory</h3><p class="sub" style="margin:0" id="ccount"></p></div><div class="tool"><input type="search" id="cqi" placeholder="Search name, ID, email..." value="'+E(cq)+'" aria-label="Search clients"><select id="csi" aria-label="Status">'+opts(['All'].concat(CST),cs)+'</select><button class="btn btn-line" id="exp">Export CSV</button><button class="btn btn-gold" id="addc">+ Add client</button></div></div><div class="tw"><table><thead><tr><th>ID</th><th>Client</th><th>Score</th><th>Plan</th><th>Status</th><th>Actions</th></tr></thead><tbody id="cbody"></tbody></table></div></div>';
+};
+V.clients_after=function(){
+  clientRows();
+  $('#cqi').oninput=function(){cq=this.value;clientRows()};
+  $('#csi').onchange=function(){cs=this.value;clientRows()};
+  $('#addc').onclick=addClient;
+  $('#exp').onclick=function(){
+    var d=Stk.db(),rows=[['Login ID','Name','Email','Phone','Score','Plan','Status','Joined']].concat(d.clients.map(function(c){return[c.id,c.name,c.email,c.phone,c.score,c.plan,c.status,c.joined]}));
+    Stk.download('stackly-clients.csv',rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"'}).join(',')}).join('\n'));Stk.toast('Client list exported.');
+  };
+};
+function addClient(){
+  var m=Stk.modal('Add new client','<form id="nc"><div class="fld"><label>Full name</label><input name="fname" required></div><div class="row2"><div class="fld"><label>Email</label><input name="email" type="email" required></div><div class="fld"><label>Phone</label><input name="phone" required></div></div><div class="row2"><div class="fld"><label>Plan</label><select name="plan">'+opts(PLANS,'Starter')+'</select></div><div class="fld"><label>Starting score</label><input name="score" type="number" min="300" max="900" value="600" required></div></div><p class="hint">A Login ID and temporary password are generated automatically.</p><div class="mfoot"><button type="button" class="btn btn-line" data-x>Cancel</button><button class="btn btn-gold">Create client</button></div></form>');
+  m.el.querySelector('#nc').onsubmit=function(e){
+    e.preventDefault();var f=e.target.elements,d=Stk.db();
+    if(d.clients.some(function(x){return x.email.toLowerCase()===f.email.value.trim().toLowerCase()})){Stk.toast('A client with this email already exists.','err');return}
+    var id=Stk.next(d,'CL'),pw='stk'+Math.floor(1000+Math.random()*9000);
+    d.clients.push({id:id,name:f.fname.value.trim(),email:f.email.value.trim(),phone:f.phone.value.trim(),pass:pw,score:+f.score.value,plan:f.plan.value,status:'Active',joined:Stk.today()});
+    Stk.save(d);m.el.querySelector('.mbody').innerHTML='<p class="cm">Client created. Share these credentials:</p><dl class="kv"><dt>Login ID</dt><dd>'+id+'</dd><dt>Password</dt><dd>'+pw+'</dd></dl><div class="mfoot"><button class="btn btn-gold" id="dn">Done</button></div>';
+    m.el.querySelector('#dn').onclick=function(){m.close();go('clients')};
+  };
+}
+function editClient(id){
+  var d=Stk.db(),c=d.clients.filter(function(x){return x.id===id})[0];if(!c)return;
+  var m=Stk.modal('Edit '+c.id,'<form id="ec"><div class="fld"><label>Full name</label><input name="fname" value="'+E(c.name)+'" required></div><div class="row2"><div class="fld"><label>Email</label><input name="email" type="email" value="'+E(c.email)+'" required></div><div class="fld"><label>Phone</label><input name="phone" value="'+E(c.phone)+'" required></div></div><div class="row2"><div class="fld"><label>Credit score</label><input name="score" type="number" min="300" max="900" value="'+c.score+'" required></div><div class="fld"><label>Plan</label><select name="plan">'+opts(PLANS,c.plan)+'</select></div></div><div class="row2"><div class="fld"><label>Status</label><select name="status">'+opts(CST,c.status)+'</select></div><div class="fld"><label>Reset password (optional)</label><input name="pw" placeholder="Leave blank to keep"></div></div><div class="mfoot"><button type="button" class="btn btn-line" data-x>Cancel</button><button class="btn btn-gold">Save changes</button></div></form>');
+  m.el.querySelector('#ec').onsubmit=function(e){
+    e.preventDefault();var f=e.target.elements,d2=Stk.db(),c2=d2.clients.filter(function(x){return x.id===id})[0];
+    if(d2.clients.some(function(x){return x.id!==id&&x.email.toLowerCase()===f.email.value.trim().toLowerCase()})){Stk.toast('Email already used by another client.','err');return}
+    if(f.pw.value&&f.pw.value.length<6){Stk.toast('Password must be at least 6 characters.','err');return}
+    c2.name=f.fname.value.trim();c2.email=f.email.value.trim();c2.phone=f.phone.value.trim();c2.score=Math.max(300,Math.min(900,+f.score.value||c2.score));c2.plan=f.plan.value;c2.status=f.status.value;if(f.pw.value)c2.pass=f.pw.value;
+    Stk.save(d2);m.close();Stk.toast('Client updated.');go('clients');
+  };
+}
+
+/* ---------- disputes ---------- */
+function disputeRows(){
+  var d=Stk.db(),q=dq.toLowerCase();
+  var list=d.disputes.filter(function(x){return(ds==='All'||x.status===ds)&&(!q||(x.id+x.item+x.bureau+x.type+cname(d,x.cid)+x.cid).toLowerCase().indexOf(q)>=0)}).sort(function(a,b){return a.date<b.date?1:-1});
+  $('#dcount').textContent=list.length+' of '+d.disputes.length+' disputes';
+  $('#dbody').innerHTML=list.length?list.map(function(x){return '<tr><td>'+E(x.id)+'</td><td><b>'+E(cname(d,x.cid))+'</b><span class="sm">'+E(x.cid)+'</span></td><td><b>'+E(x.item)+'</b><span class="sm">'+E(x.bureau)+' &middot; '+E(x.type)+'</span></td><td>'+Stk.fmtDate(x.date)+'</td><td><select data-act="st" data-id="'+x.id+'" aria-label="Status">'+opts(DST,x.status)+'</select></td><td><div class="acts"><button class="btn btn-line btn-sm" data-act="vd" data-id="'+x.id+'">View</button><button class="btn btn-line btn-sm" data-act="xd" data-id="'+x.id+'">Delete</button></div></td></tr>'}).join(''):'<tr><td colspan="6" class="empty">No disputes match.</td></tr>';
+}
+V.disputes=function(){
+  return '<div class="card"><div class="ch"><div><h3>All disputes</h3><p class="sub" style="margin:0" id="dcount"></p></div><div class="tool"><input type="search" id="dqi" placeholder="Search disputes..." value="'+E(dq)+'" aria-label="Search disputes"><select id="dsi" aria-label="Status filter">'+opts(['All'].concat(DST),ds)+'</select></div></div><p class="note" style="margin-bottom:12px">Marking a dispute Resolved adds +10 to the client\'s credit score (once per dispute).</p><div class="tw"><table><thead><tr><th>Ref</th><th>Client</th><th>Item</th><th>Raised</th><th>Status</th><th>Actions</th></tr></thead><tbody id="dbody"></tbody></table></div></div>';
+};
+V.disputes_after=function(){
+  disputeRows();
+  $('#dqi').oninput=function(){dq=this.value;disputeRows()};
+  $('#dsi').onchange=function(){ds=this.value;disputeRows()};
+};
+
+/* ---------- appointments ---------- */
+V.appts=function(){
+  var d=Stk.db(),list=d.appts.filter(function(a){return as==='All'||a.status===as}).sort(function(a,b){return a.date<b.date?-1:1});
+  return '<div class="card"><div class="ch"><div><h3>Appointment requests</h3><p class="sub" style="margin:0">Approve, decline or complete client bookings.</p></div><div class="tool"><select id="asi" aria-label="Filter">'+opts(['All','Pending','Approved','Completed','Declined','Cancelled'],as)+'</select></div></div><div class="tw"><table><thead><tr><th>Client</th><th>Topic</th><th>When</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
+  (list.length?list.map(function(a){var b='';
+    if(a.status==='Pending')b='<button class="btn btn-em btn-sm" data-act="ap" data-id="'+a.id+'">Approve</button><button class="btn btn-line btn-sm" data-act="dc" data-id="'+a.id+'">Decline</button>';
+    else if(a.status==='Approved')b='<button class="btn btn-em btn-sm" data-act="cp" data-id="'+a.id+'">Mark completed</button><button class="btn btn-line btn-sm" data-act="dc" data-id="'+a.id+'">Decline</button>';
+    else b='<span class="hint">-</span>';
+    return '<tr><td><b>'+E(cname(d,a.cid))+'</b><span class="sm">'+E(a.cid)+'</span></td><td>'+E(a.topic)+'</td><td>'+Stk.fmtDate(a.date)+'<span class="sm">'+E(a.time)+'</span></td><td>'+badge(a.status)+'</td><td><div class="acts">'+b+'</div></td></tr>'}).join(''):'<tr><td colspan="5" class="empty">No appointments found.</td></tr>')+'</tbody></table></div></div>';
+};
+V.appts_after=function(){$('#asi').onchange=function(){as=this.value;go('appts')}};
+
+/* ---------- messages ---------- */
+V.messages=function(){
+  var d=Stk.db();if(!active||!d.clients.some(function(c){return c.id===active}))active=d.clients[0]&&d.clients[0].id;
+  var list=d.clients.map(function(c){var un=d.msgs.filter(function(m){return m.cid===c.id&&m.from==='client'&&!m.read}).length;return '<button data-act="oc" data-id="'+c.id+'" class="'+(c.id===active?'on':'')+'"><span class="av" style="width:34px;height:34px;font-size:.78rem">'+Stk.initials(c.name)+'</span><span><b style="display:block;font-size:.9rem">'+E(c.name)+'</b><small style="color:var(--muted)">'+E(c.id)+'</small></span>'+(un?'<span class="dot">'+un+'</span>':'')+'</button>'}).join('');
+  if(active){var ch=false;d.msgs.forEach(function(m){if(m.cid===active&&m.from==='client'&&!m.read){m.read=true;ch=true}});if(ch)Stk.save(d)}
+  var ms=d.msgs.filter(function(m){return m.cid===active}).sort(function(a,b){return a.ts-b.ts});
+  return '<div class="split"><div class="card" style="padding:14px"><h3 style="margin:4px 8px 10px;font-size:1.05rem">Clients</h3><div class="cl">'+(list||'<p class="empty">No clients.</p>')+'</div></div><div class="card"><h3>'+(active?E(cname(d,active)):'No conversation')+'</h3><p class="sub">'+(active?'Conversation with '+E(active):'Add a client to start chatting.')+'</p><div class="chat" id="chat">'+(ms.length?ms.map(function(m){return '<div class="msg'+(m.from==='admin'?' me':'')+'">'+E(m.text)+'<small>'+(m.from==='admin'?'You':E(cname(d,m.cid)))+' &middot; '+Stk.fmtTime(m.ts)+'</small></div>'}).join(''):'<p class="empty">No messages yet.</p>')+'</div>'+(active?'<form class="send" id="mf"><input name="t" placeholder="Write a reply..." autocomplete="off" required><button class="btn btn-gold">Send</button></form>':'')+'</div></div>';
+};
+V.messages_after=function(){
+  var ch=$('#chat');if(ch)ch.scrollTop=ch.scrollHeight;
+  var f=$('#mf');if(f)f.onsubmit=function(e){
+    e.preventDefault();var t=e.target.elements.t.value.trim();if(!t)return;
+    var d=Stk.db();d.msgs.push({id:Stk.next(d,'M'),cid:active,from:'admin',text:t,ts:Date.now(),read:false});Stk.save(d);go('messages');
+  };
+};
+
+/* ---------- settings ---------- */
+V.settings=function(a){
+  return '<div class="grid2"><div class="card"><h3>Admin profile</h3><p class="sub">Your Admin ID cannot be changed.</p><form id="pf"><div class="fld"><label>Admin ID</label><input value="'+E(a.id)+'" disabled></div><div class="fld"><label>Name</label><input name="fname" value="'+E(a.name)+'" required></div><div class="fld"><label>Email</label><input name="email" type="email" value="'+E(a.email)+'" required></div><button class="btn btn-gold">Save profile</button></form></div>'+
+  '<div class="card"><h3>Change password</h3><p class="sub">Use at least 6 characters.</p><form id="pw"><div class="fld"><label>Current password</label><input type="password" name="cur" required autocomplete="current-password"></div><div class="fld"><label>New password</label><input type="password" name="n1" minlength="6" required autocomplete="new-password"></div><div class="fld"><label>Confirm new password</label><input type="password" name="n2" minlength="6" required autocomplete="new-password"></div><button class="btn btn-dark">Update password</button></form></div></div>'+
+  '<div class="card"><h3>Demo data</h3><p class="sub">Restore the sample clients, disputes, appointments and messages. This removes everything you have added.</p><button class="btn btn-danger" id="rs">Reset demo data</button></div>';
+};
+V.settings_after=function(){
+  $('#pf').onsubmit=function(e){e.preventDefault();var f=e.target.elements,d=Stk.db(),a=d.admins.filter(function(x){return x.id===sess.id})[0];a.name=f.fname.value.trim();a.email=f.email.value.trim();Stk.save(d);Stk.toast('Profile saved.');go('settings')};
+  $('#pw').onsubmit=function(e){
+    e.preventDefault();var f=e.target.elements,d=Stk.db(),a=d.admins.filter(function(x){return x.id===sess.id})[0];
+    if(f.cur.value!==a.pass){Stk.toast('Current password is incorrect.','err');return}
+    if(f.n1.value.length<6){Stk.toast('New password must be at least 6 characters.','err');return}
+    if(f.n1.value!==f.n2.value){Stk.toast('New passwords do not match.','err');return}
+    a.pass=f.n1.value;Stk.save(d);e.target.reset();Stk.toast('Password changed.');
+  };
+  $('#rs').onclick=function(){Stk.confirm('Reset all demo data? Everything you added or changed will be lost.',function(){Stk.reset();active=null;Stk.toast('Demo data restored.');go('overview')},'Reset data')};
+};
+
+/* ---------- delegated actions ---------- */
+function setAppt(id,s,msg){var d=Stk.db(),a=d.appts.filter(function(x){return x.id===id})[0];if(!a)return;a.status=s;Stk.save(d);Stk.toast(msg);go(cur)}
+document.addEventListener('change',function(e){
+  var t=e.target;if(t.dataset&&t.dataset.act==='st'){
+    var d=Stk.db(),x=d.disputes.filter(function(k){return k.id===t.dataset.id})[0];if(!x)return;
+    x.status=t.value;var extra='';
+    if(t.value==='Resolved'&&!x.credited){var c=d.clients.filter(function(k){return k.id===x.cid})[0];if(c){c.score=Math.min(900,c.score+10);x.credited=true;extra=' Client score +10.'}}
+    Stk.save(d);Stk.toast('Status set to '+t.value+'.'+extra);renderNav();
+  }
+});
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-v],[data-go],[data-act]');if(!t||t.tagName==='SELECT')return;
+  if(t.dataset.v){go(t.dataset.v);return}
+  if(t.dataset.go){go(t.dataset.go);if(t.dataset.add)setTimeout(addClient,50);return}
+  var id=t.dataset.id,a=t.dataset.act,d=Stk.db();
+  if(a==='ap')setAppt(id,'Approved','Appointment approved.');
+  if(a==='dc')setAppt(id,'Declined','Appointment declined.');
+  if(a==='cp')setAppt(id,'Completed','Marked as completed.');
+  if(a==='oc'){active=id;go('messages')}
+  if(a==='ec')editClient(id);
+  if(a==='vc'){var c=d.clients.filter(function(k){return k.id===id})[0];if(!c)return;
+    var n=d.disputes.filter(function(k){return k.cid===id}),op=n.filter(function(k){return k.status==='Submitted'||k.status==='In review'}).length;
+    Stk.modal(c.name,'<dl class="kv"><dt>Login ID</dt><dd>'+E(c.id)+'</dd><dt>Email</dt><dd>'+E(c.email)+'</dd><dt>Phone</dt><dd>'+E(c.phone)+'</dd><dt>Credit score</dt><dd>'+c.score+'</dd><dt>Plan</dt><dd>'+E(c.plan)+'</dd><dt>Status</dt><dd>'+badge(c.status)+'</dd><dt>Joined</dt><dd>'+Stk.fmtDate(c.joined)+'</dd><dt>Disputes</dt><dd>'+n.length+' total, '+op+' open</dd><dt>Documents</dt><dd>'+d.docs.filter(function(k){return k.cid===id}).length+'</dd></dl><div class="mfoot"><button class="btn btn-line" data-x>Close</button></div>')}
+  if(a==='xc')Stk.confirm('Delete this client and all their disputes, documents, appointments and messages? This cannot be undone.',function(){var d2=Stk.db();['disputes','docs','appts','msgs'].forEach(function(k){d2[k]=d2[k].filter(function(x){return x.cid!==id})});d2.clients=d2.clients.filter(function(x){return x.id!==id});Stk.save(d2);Stk.toast('Client deleted.');go('clients')},'Delete client');
+  if(a==='vd'){var x=d.disputes.filter(function(k){return k.id===id})[0];if(!x)return;
+    Stk.modal('Dispute '+x.id,'<dl class="kv"><dt>Client</dt><dd>'+E(cname(d,x.cid))+' ('+E(x.cid)+')</dd><dt>Bureau</dt><dd>'+E(x.bureau)+'</dd><dt>Issue type</dt><dd>'+E(x.type)+'</dd><dt>Item</dt><dd>'+E(x.item)+'</dd><dt>Reason</dt><dd>'+E(x.reason||'-')+'</dd><dt>Raised on</dt><dd>'+Stk.fmtDate(x.date)+'</dd><dt>Status</dt><dd>'+badge(x.status)+'</dd></dl><div class="mfoot"><button class="btn btn-line" data-x>Close</button></div>')}
+  if(a==='xd')Stk.confirm('Delete this dispute permanently?',function(){var d2=Stk.db();d2.disputes=d2.disputes.filter(function(x){return x.id!==id});Stk.save(d2);Stk.toast('Dispute deleted.');go('disputes')},'Delete');
+});
+$('#lo').onclick=function(){Stk.confirm('Log out of the admin console?',Stk.logout,'Log out')};
+$('#bg').onclick=function(){$('#side').classList.add('open');$('#scrim').classList.add('open')};
+$('#scrim').onclick=function(){$('#side').classList.remove('open');$('#scrim').classList.remove('open')};
+window.addEventListener('storage',function(){if(!Stk.session())location.replace('login.html')});
+go((location.hash||'').slice(1)||'overview');
+})();
+</script></body></html>

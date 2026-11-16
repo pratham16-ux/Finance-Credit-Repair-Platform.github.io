@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Client Dashboard | Stackly</title><meta name="theme-color" content="#08142F"><meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/dash.css"></head><body>
+<div class="app">
+  <aside class="side" id="side">
+    <a class="logo" href="index.html" title="Back to website"><img src="https://wsrv.nl/?url=https://snabsolutions.in/wp-content/uploads/2026/02/stackly-snab-solutions.png&w=280&output=webp&q=85&fit=cover" alt="Stackly" width="140" height="46"></a>
+    <div class="role">Client portal</div>
+    <div id="nav"></div><div class="sp"></div>
+    <a class="nv" href="index.html" style="display:flex;gap:12px;padding:12px 14px;font-weight:600;border-radius:12px">&#8592; Website</a>
+    <button class="nv lo" id="lo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out</button>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+  <div class="main">
+    <header class="top"><button class="burger" id="bg" aria-label="Menu">&#9776;</button><h1 id="ttl">Overview</h1>
+      <div class="who"><span class="chip">Login ID: <b id="lid"></b></span><div class="av" id="av"></div></div></header>
+    <main class="view" id="view"></main>
+  </div>
+</div>
+<nav class="bnav" id="bnav" aria-label="Quick navigation"></nav>
+<script src="js/auth.js"></script>
+<script>
+(function(){
+var sess=Stk.guard('client');if(!sess)return;
+var E=Stk.esc,$=function(s,c){return(c||document).querySelector(s)};
+var ic={
+ overview:'<path d="M3 12l9-9 9 9M5 10v10h14V10"/>',
+ disputes:'<path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9zM14 3v6h6M8 13h8M8 17h5"/>',
+ docs:'<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>',
+ appts:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/>',
+ messages:'<path d="M21 12a8 8 0 01-11.6 7.1L3 21l1.9-5.4A8 8 0 1121 12z"/>',
+ emi:'<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h2M14 11h2M8 15h2M14 15h2M8 19h8"/>',
+ profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/>'
+};
+var titles={overview:'Overview',disputes:'My Disputes',docs:'Documents',appts:'Appointments',messages:'Messages',emi:'EMI Calculator',profile:'My Profile'};
+var cur='overview',dfilter='All';
+function me(){return Stk.db().clients.filter(function(c){return c.id===sess.id})[0]}
+function mine(d,k){return d[k].filter(function(x){return x.cid===sess.id})}
+function badge(s){return '<span class="badge s-'+Stk.slug(s)+'">'+E(s)+'</span>'}
+function band(n){return n>=750?'Excellent':n>=700?'Good':n>=650?'Fair':n>=600?'Needs work':'Poor'}
+
+function bnav(keys,b){
+  var more='<button type="button" id="bmore"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="t">More</span></button>';
+  $('#bnav').innerHTML=keys.map(function(k){var s=titles[k].replace('My ','').replace(' Calculator','');return '<button type="button" data-v="'+k+'" class="'+(k===cur?'on':'')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ic[k]+'</svg><span class="t">'+s+'</span>'+(b[k]?'<span class="nb">'+b[k]+'</span>':'')+'</button>'}).join('')+more;
+  $('#bmore').onclick=function(){$('#side').classList.add('open');$('#scrim').classList.add('open')};
+}
+function renderNav(){
+  var d=Stk.db(),unread=mine(d,'msgs').filter(function(m){return m.from==='admin'&&!m.read}).length;
+  $('#nav').innerHTML=Object.keys(titles).map(function(k){
+    return '<button class="nv'+(k===cur?' on':'')+'" data-v="'+k+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+ic[k]+'</svg>'+titles[k]+(k==='messages'&&unread?'<span class="nb">'+unread+'</span>':'')+'</button>';
+  }).join('');
+  bnav(['overview','disputes','appts','messages'],{messages:unread});
+}
+function go(v){
+  if(!titles[v])v='overview';cur=v;history.replaceState(null,'','#'+v);
+  var c=me();if(!c){Stk.logout();return}
+  $('#lid').textContent=c.id;$('#av').textContent=Stk.initials(c.name);$('#ttl').textContent=titles[v];document.title=titles[v]+' | Stackly';
+  $('#view').innerHTML=V[v](c);if(V[v+'_after'])V[v+'_after'](c);
+  renderNav();$('#side').classList.remove('open');$('#scrim').classList.remove('open');window.scrollTo(0,0);
+}
+var V={};
+
+/* ---------- overview ---------- */
+V.overview=function(c){
+  var d=Stk.db(),ds=mine(d,'disputes'),open=ds.filter(function(x){return x.status==='Submitted'||x.status==='In review'}).length,res=ds.filter(function(x){return x.status==='Resolved'}).length;
+  var ap=mine(d,'appts').filter(function(a){return a.date>=Stk.today()&&(a.status==='Pending'||a.status==='Approved')}).sort(function(a,b){return a.date<b.date?-1:1})[0];
+  var pct=Math.max(0,Math.min(1,(c.score-300)/600)),C=2*Math.PI*54,goal=Math.min(100,Math.round((c.score-300)/450*100));
+  var recent=ds.slice().sort(function(a,b){return a.date<b.date?1:-1}).slice(0,4);
+  return '<div class="hello"><div><h2>Hello, '+E(c.name.split(' ')[0])+' &#128075;</h2><p>Here is where your credit case stands today.</p><span class="id">You are signed in as <b>'+E(c.id)+'</b> &middot; '+E(c.plan)+' plan</span></div><div class="qa"><button class="btn btn-gold" data-go="disputes">+ New dispute</button><button class="btn btn-line" data-go="appts">Book a call</button></div></div>'+
+  '<div class="grid4"><div class="stat go" data-go="disputes"><span>Active disputes</span><b>'+open+'</b><small>Submitted or in review</small></div><div class="stat go" data-go="disputes"><span>Resolved</span><b>'+res+'</b><small>Items cleared</small></div><div class="stat go" data-go="docs"><span>Documents</span><b>'+mine(d,'docs').length+'</b><small>In your locker</small></div><div class="stat go" data-go="appts"><span>Next appointment</span><b style="font-size:1.25rem;padding-top:8px">'+(ap?Stk.fmtDate(ap.date):'None')+'</b><small>'+(ap?E(ap.time)+' &middot; '+E(ap.status):'Book a free review')+'</small></div></div>'+
+  '<div class="grid2"><div class="card"><h3>Credit score</h3><p class="sub">Updated by your advisor as disputes resolve.</p><div class="ring"><svg viewBox="0 0 130 130"><circle cx="65" cy="65" r="54" fill="none" stroke="#EEF2F9" stroke-width="12"/><circle cx="65" cy="65" r="54" fill="none" stroke="url(#g)" stroke-width="12" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+(C*(1-pct)).toFixed(1)+'" transform="rotate(-90 65 65)"/><defs><linearGradient id="g"><stop offset="0" stop-color="#3C50DC"/><stop offset="1" stop-color="#18C496"/></linearGradient></defs></svg><div><div class="num">'+c.score+'</div><b>'+band(c.score)+'</b><p class="hint">Range 300 - 900</p></div></div><p style="margin-top:14px" class="hint">Progress to a 750 goal: '+goal+'%</p><div class="bar"><i style="width:'+goal+'%"></i></div></div>'+
+  '<div class="card"><div class="ch"><h3>Recent disputes</h3><button class="btn btn-line btn-sm" data-go="disputes">View all</button></div>'+(recent.length?'<div class="list">'+recent.map(function(x){return '<div class="li"><div><b>'+E(x.item)+'</b><small>'+E(x.bureau)+' &middot; '+Stk.fmtDate(x.date)+'</small></div>'+badge(x.status)+'</div>'}).join('')+'</div>':'<p class="empty">No disputes yet. Raise your first one.</p>')+'</div></div>';
+};
+
+/* ---------- disputes ---------- */
+V.disputes=function(c){
+  var d=Stk.db(),ds=mine(d,'disputes').sort(function(a,b){return a.date<b.date?1:-1});
+  if(dfilter!=='All')ds=ds.filter(function(x){return x.status===dfilter});
+  return '<div class="card"><div class="ch"><div><h3>Dispute tracker</h3><p class="sub" style="margin:0">Every item we are challenging on your reports.</p></div><div class="tool"><select id="df" aria-label="Filter">'+['All','Submitted','In review','Resolved','Rejected'].map(function(s){return '<option'+(s===dfilter?' selected':'')+'>'+s+'</option>'}).join('')+'</select><button class="btn btn-gold" id="nd">+ New dispute</button></div></div>'+
+  '<div class="tw"><table><thead><tr><th>Ref</th><th>Bureau</th><th>Item</th><th>Raised</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
+  (ds.length?ds.map(function(x){return '<tr><td>'+E(x.id)+'</td><td>'+E(x.bureau)+'</td><td><b>'+E(x.item)+'</b><span class="sm">'+E(x.type)+'</span></td><td>'+Stk.fmtDate(x.date)+'</td><td>'+badge(x.status)+'</td><td><div class="acts"><button class="btn btn-line btn-sm" data-act="vd" data-id="'+x.id+'">View</button>'+((x.status==='Submitted'||x.status==='In review')?'<button class="btn btn-line btn-sm" data-act="wd" data-id="'+x.id+'">Withdraw</button>':'')+'</div></td></tr>'}).join(''):'<tr><td colspan="6" class="empty">No disputes to show.</td></tr>')+'</tbody></table></div></div>';
+};
+V.disputes_after=function(){
+  $('#df').onchange=function(){dfilter=this.value;go('disputes')};
+  $('#nd').onclick=newDispute;
+};
+function newDispute(){
+  var m=Stk.modal('Raise a new dispute','<form id="df2"><div class="row2"><div class="fld"><label>Credit bureau</label><select name="bureau"><option>CIBIL</option><option>Experian</option><option>Equifax</option><option>CRIF High Mark</option></select></div><div class="fld"><label>Issue type</label><select name="type"><option>Incorrect late payment</option><option>Account not mine</option><option>Duplicate account</option><option>Wrong balance</option><option>Settled account shown as open</option><option>Other</option></select></div></div><div class="fld"><label>Account / item</label><input name="item" required placeholder="e.g. SBI credit card - Jan 2025 late mark"></div><div class="fld"><label>What is wrong?</label><textarea name="reason" required placeholder="Briefly explain why this entry is incorrect"></textarea></div><div class="mfoot"><button type="button" class="btn btn-line" data-x>Cancel</button><button class="btn btn-gold">Submit dispute</button></div></form>');
+  m.el.querySelector('#df2').onsubmit=function(e){
+    e.preventDefault();var f=e.target.elements,d=Stk.db();
+    d.disputes.push({id:Stk.next(d,'D'),cid:sess.id,bureau:f.bureau.value,type:f.type.value,item:f.item.value.trim(),reason:f.reason.value.trim(),date:Stk.today(),status:'Submitted'});
+    Stk.save(d);m.close();Stk.toast('Dispute submitted. Our team will review it shortly.');go('disputes');
+  };
+}
+
+/* ---------- documents ---------- */
+V.docs=function(c){
+  var ds=mine(Stk.db(),'docs').sort(function(a,b){return a.date<b.date?1:-1});
+  return '<div class="card"><h3>Upload documents</h3><p class="sub">Credit reports, bank statements, NOCs, ID proof.</p><div class="drop" id="drop" tabindex="0" role="button"><p style="margin:0 auto"><b>Click to choose files</b> or drag and drop here</p><p class="hint" style="margin:6px auto 0">PDF, JPG, PNG, DOC &middot; up to 10 MB each</p></div><input type="file" id="fi" multiple hidden accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"><p class="note" style="margin-top:12px">Demo note: file names and sizes are saved in this browser; file contents are not uploaded anywhere.</p></div>'+
+  '<div class="card"><h3>Your documents ('+ds.length+')</h3><div style="height:10px"></div>'+(ds.length?'<div class="list">'+ds.map(function(x){return '<div class="li"><div><b>'+E(x.name)+'</b><small>'+Stk.size(x.size)+' &middot; '+Stk.fmtDate(x.date)+'</small></div><div class="acts"><button class="btn btn-line btn-sm" data-act="dd" data-id="'+x.id+'">Delete</button></div></div>'}).join('')+'</div>':'<p class="empty">No documents uploaded yet.</p>')+'</div>';
+};
+V.docs_after=function(){
+  var dz=$('#drop'),fi=$('#fi');
+  function add(files){
+    var d=Stk.db(),n=0,bad=0;
+    Array.prototype.forEach.call(files,function(f){
+      if(f.size>10*1048576){bad++;return}
+      d.docs.push({id:Stk.next(d,'F'),cid:sess.id,name:f.name,size:f.size,date:Stk.today()});n++;
+    });
+    Stk.save(d);if(n)Stk.toast(n+' file'+(n>1?'s':'')+' added to your locker.');if(bad)Stk.toast(bad+' file(s) skipped: larger than 10 MB.','err');go('docs');
+  }
+  dz.onclick=function(){fi.click()};dz.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click()}};
+  fi.onchange=function(){if(fi.files.length)add(fi.files)};
+  ['dragover','dragenter'].forEach(function(t){dz.addEventListener(t,function(e){e.preventDefault();dz.classList.add('over')})});
+  ['dragleave','drop'].forEach(function(t){dz.addEventListener(t,function(e){e.preventDefault();dz.classList.remove('over')})});
+  dz.addEventListener('drop',function(e){if(e.dataTransfer.files.length)add(e.dataTransfer.files)});
+};
+
+/* ---------- appointments ---------- */
+V.appts=function(c){
+  var as=mine(Stk.db(),'appts').sort(function(a,b){return a.date<b.date?1:-1});
+  return '<div class="grid2"><div class="card"><h3>Book an appointment</h3><p class="sub">Pick a slot. Your advisor will confirm it.</p><form id="af"><div class="row2"><div class="fld"><label>Date</label><input type="date" name="date" min="'+Stk.today()+'" required></div><div class="fld"><label>Time</label><select name="time">'+['10:00 AM','11:00 AM','12:00 PM','02:00 PM','03:00 PM','04:00 PM','05:00 PM'].map(function(t){return '<option>'+t+'</option>'}).join('')+'</select></div></div><div class="fld"><label>Topic</label><select name="topic"><option>Free credit review</option><option>Dispute strategy call</option><option>Debt settlement advice</option><option>Home loan readiness</option><option>Other</option></select></div><button class="btn btn-gold">Request appointment</button></form></div>'+
+  '<div class="card"><h3>Your appointments</h3><div style="height:10px"></div>'+(as.length?'<div class="list">'+as.map(function(a){return '<div class="li"><div><b>'+E(a.topic)+'</b><small>'+Stk.fmtDate(a.date)+' &middot; '+E(a.time)+'</small></div><div class="acts">'+badge(a.status)+((a.status==='Pending'||a.status==='Approved')?'<button class="btn btn-line btn-sm" data-act="ca" data-id="'+a.id+'">Cancel</button>':'')+'</div></div>'}).join('')+'</div>':'<p class="empty">No appointments yet.</p>')+'</div></div>';
+};
+V.appts_after=function(){
+  $('#af').onsubmit=function(e){
+    e.preventDefault();var f=e.target.elements,d=Stk.db();
+    if(f.date.value<Stk.today()){Stk.toast('Please pick a future date.','err');return}
+    if(d.appts.some(function(a){return a.cid===sess.id&&a.date===f.date.value&&a.time===f.time.value&&(a.status==='Pending'||a.status==='Approved')})){Stk.toast('You already have a request for that slot.','err');return}
+    d.appts.push({id:Stk.next(d,'A'),cid:sess.id,date:f.date.value,time:f.time.value,topic:f.topic.value,status:'Pending'});
+    Stk.save(d);Stk.toast('Appointment requested. We will confirm soon.');go('appts');
+  };
+};
+
+/* ---------- messages ---------- */
+V.messages=function(c){
+  var d=Stk.db(),ms=mine(d,'msgs').sort(function(a,b){return a.ts-b.ts});
+  var ch=false;ms.forEach(function(m){if(m.from==='admin'&&!m.read){m.read=true;ch=true}});
+  if(ch){d.msgs.forEach(function(x){if(x.cid===sess.id&&x.from==='admin')x.read=true});Stk.save(d)}
+  return '<div class="card"><h3>Chat with your advisor</h3><p class="sub">Replies usually arrive within one working day.</p><div class="chat" id="chat">'+(ms.length?ms.map(function(m){return '<div class="msg'+(m.from==='client'?' me':'')+'">'+E(m.text)+'<small>'+(m.from==='client'?'You':'Advisor')+' &middot; '+Stk.fmtTime(m.ts)+'</small></div>'}).join(''):'<p class="empty">No messages yet. Say hello!</p>')+'</div><form class="send" id="mf"><input name="t" placeholder="Type your message..." autocomplete="off" required><button class="btn btn-gold">Send</button></form></div>';
+};
+V.messages_after=function(){
+  var ch=$('#chat');ch.scrollTop=ch.scrollHeight;
+  $('#mf').onsubmit=function(e){
+    e.preventDefault();var t=e.target.elements.t.value.trim();if(!t)return;
+    var d=Stk.db();d.msgs.push({id:Stk.next(d,'M'),cid:sess.id,from:'client',text:t,ts:Date.now(),read:false});Stk.save(d);go('messages');
+  };
+};
+
+/* ---------- EMI ---------- */
+V.emi=function(){
+  return '<div class="grid2"><div class="card"><h3>Loan EMI calculator</h3><p class="sub">See what a better score could save you.</p>'+
+  '<div class="fld"><label>Loan amount: <b id="o1"></b></label><input class="rng" type="range" id="amt" min="100000" max="10000000" step="50000" value="2500000"></div>'+
+  '<div class="fld"><label>Interest rate: <b id="o2"></b></label><input class="rng" type="range" id="rate" min="6" max="24" step="0.1" value="9.5"></div>'+
+  '<div class="fld"><label>Tenure: <b id="o3"></b></label><input class="rng" type="range" id="ten" min="1" max="30" step="1" value="15"></div></div>'+
+  '<div class="card"><h3>Your estimate</h3><p class="sub">Calculated on a reducing balance</p><div class="grid4" style="grid-template-columns:1fr"><div class="stat"><span>Monthly EMI</span><b id="emi"></b></div><div class="stat"><span>Total interest</span><b id="int"></b></div><div class="stat"><span>Total payable</span><b id="tot"></b></div></div></div></div>';
+};
+V.emi_after=function(){
+  var inr=function(n){return '\u20B9'+Math.round(n).toLocaleString('en-IN')};
+  function calc(){
+    var P=+$('#amt').value,r=+$('#rate').value/1200,n=+$('#ten').value*12,e=r?P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1):P/n;
+    $('#o1').textContent=inr(P);$('#o2').textContent=$('#rate').value+'% p.a.';$('#o3').textContent=$('#ten').value+' years';
+    $('#emi').textContent=inr(e);$('#int').textContent=inr(e*n-P);$('#tot').textContent=inr(e*n);
+  }
+  ['amt','rate','ten'].forEach(function(i){$('#'+i).oninput=calc});calc();
+};
+
+/* ---------- profile ---------- */
+V.profile=function(c){
+  return '<div class="grid2"><div class="card"><h3>Profile details</h3><p class="sub">Your Login ID cannot be changed.</p><form id="pf"><div class="fld"><label>Login ID</label><input value="'+E(c.id)+'" disabled></div><div class="fld"><label>Full name</label><input name="fname" value="'+E(c.name)+'" required></div><div class="row2"><div class="fld"><label>Email</label><input name="email" type="email" value="'+E(c.email)+'" required></div><div class="fld"><label>Phone</label><input name="phone" value="'+E(c.phone)+'" required></div></div><div class="fld"><label>Plan</label><input value="'+E(c.plan)+' &middot; member since '+Stk.fmtDate(c.joined)+'" disabled></div><button class="btn btn-gold">Save changes</button></form></div>'+
+  '<div class="card"><h3>Change password</h3><p class="sub">Use at least 6 characters.</p><form id="pw"><div class="fld"><label>Current password</label><input type="password" name="cur" required autocomplete="current-password"></div><div class="fld"><label>New password</label><input type="password" name="n1" minlength="6" required autocomplete="new-password"></div><div class="fld"><label>Confirm new password</label><input type="password" name="n2" minlength="6" required autocomplete="new-password"></div><button class="btn btn-dark">Update password</button></form></div></div>';
+};
+V.profile_after=function(){
+  $('#pf').onsubmit=function(e){
+    e.preventDefault();var f=e.target.elements,d=Stk.db(),c=d.clients.filter(function(x){return x.id===sess.id})[0];
+    if(d.clients.some(function(x){return x.id!==c.id&&x.email.toLowerCase()===f.email.value.trim().toLowerCase()})){Stk.toast('That email is used by another account.','err');return}
+    c.name=f.fname.value.trim();c.email=f.email.value.trim();c.phone=f.phone.value.trim();Stk.save(d);Stk.toast('Profile updated.');go('profile');
+  };
+  $('#pw').onsubmit=function(e){
+    e.preventDefault();var f=e.target.elements,d=Stk.db(),c=d.clients.filter(function(x){return x.id===sess.id})[0];
+    if(f.cur.value!==c.pass){Stk.toast('Current password is incorrect.','err');return}
+    if(f.n1.value.length<6){Stk.toast('New password must be at least 6 characters.','err');return}
+    if(f.n1.value!==f.n2.value){Stk.toast('New passwords do not match.','err');return}
+    c.pass=f.n1.value;Stk.save(d);e.target.reset();Stk.toast('Password changed.');
+  };
+};
+
+/* ---------- global click handling ---------- */
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-v],[data-go],[data-act]');if(!t)return;
+  if(t.dataset.v){go(t.dataset.v);return}
+  if(t.dataset.go){go(t.dataset.go);if(t.dataset.go==='disputes'&&t.classList.contains('btn-gold'))setTimeout(newDispute,50);return}
+  var d=Stk.db(),id=t.dataset.id,a=t.dataset.act;
+  if(a==='vd'){var x=d.disputes.filter(function(k){return k.id===id})[0];if(!x)return;
+    var m=Stk.modal('Dispute '+x.id,'<dl class="kv"><dt>Bureau</dt><dd>'+E(x.bureau)+'</dd><dt>Issue type</dt><dd>'+E(x.type)+'</dd><dt>Item</dt><dd>'+E(x.item)+'</dd><dt>Reason</dt><dd>'+E(x.reason||'-')+'</dd><dt>Raised on</dt><dd>'+Stk.fmtDate(x.date)+'</dd><dt>Status</dt><dd>'+badge(x.status)+'</dd></dl><div class="mfoot"><button class="btn btn-line" data-x>Close</button></div>')}
+  if(a==='wd')Stk.confirm('Withdraw this dispute? It will be removed from your tracker.',function(){var d2=Stk.db();d2.disputes=d2.disputes.filter(function(k){return k.id!==id});Stk.save(d2);Stk.toast('Dispute withdrawn.');go('disputes')},'Withdraw');
+  if(a==='dd')Stk.confirm('Delete this document from your locker?',function(){var d2=Stk.db();d2.docs=d2.docs.filter(function(k){return k.id!==id});Stk.save(d2);Stk.toast('Document deleted.');go('docs')},'Delete');
+  if(a==='ca')Stk.confirm('Cancel this appointment?',function(){var d2=Stk.db(),x=d2.appts.filter(function(k){return k.id===id})[0];if(x)x.status='Cancelled';Stk.save(d2);Stk.toast('Appointment cancelled.');go('appts')},'Cancel appointment');
+});
+$('#lo').onclick=function(){Stk.confirm('Log out of your account?',Stk.logout,'Log out')};
+$('#bg').onclick=function(){$('#side').classList.add('open');$('#scrim').classList.add('open')};
+$('#scrim').onclick=function(){$('#side').classList.remove('open');$('#scrim').classList.remove('open')};
+window.addEventListener('storage',function(){if(!Stk.session())location.replace('login.html');else if(['messages'].indexOf(cur)<0)renderNav()});
+go((location.hash||'').slice(1)||'overview');
+})();
+</script></body></html>
