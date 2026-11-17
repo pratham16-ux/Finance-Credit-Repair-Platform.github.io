@@ -138,5 +138,14 @@
     }).observe(document.body, { childList: true, subtree: true });
   });
 
+  // recolour the logo to the theme (exact colour, keeps transparency)
+  (function(){
+    if(document.getElementById('stk-logo-filters'))return;
+    var s=document.createElement('div');s.id='stk-logo-filters';s.setAttribute('aria-hidden','true');s.style.cssText='position:absolute;width:0;height:0;overflow:hidden';
+    function f(id,a,b){return '<filter id="'+id+'" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 .2126 .7152 .0722 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="'+a[0]+' '+b[0]+'"/><feFuncG type="table" tableValues="'+a[1]+' '+b[1]+'"/><feFuncB type="table" tableValues="'+a[2]+' '+b[2]+'"/></feComponentTransfer></filter>'}
+    s.innerHTML='<svg width="0" height="0" focusable="false">'+f('stk-gold',[.839,.698,.4],[.941,.851,.635])+f('stk-ink',[.235,.314,.863],[.055,.141,.322])+'</svg>';
+    (document.body||document.documentElement).insertBefore(s,(document.body||document.documentElement).firstChild);
+  })();
+
   w.Stk = { db: db, save: save, reset: reset, next: next, session: getSession, login: login, logout: logout, guard: guard, esc: esc, fmtDate: fmtDate, fmtTime: fmtTime, size: size, today: today, toast: toast, modal: modal, confirm: confirmBox, download: download, initials: initials, slug: slug };
 })(window);

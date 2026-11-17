@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Create account | Stackly</title><meta name="theme-color" content="#08142F">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/dash.css"></head><body>
+<div class="lg">
+  <aside class="lg-art">
+    <div><a href="index.html"><img class="logo" src="https://wsrv.nl/?url=https://snabsolutions.in/wp-content/uploads/2026/02/stackly-snab-solutions.png&w=280&output=webp&q=85&fit=cover" alt="Stackly by Snab Solutions" width="140" height="46"></a>
+      <h1>Start fixing your credit today.</h1>
+      <p>Create a free client account to raise disputes, store documents and chat with your advisor.</p>
+      <ul><li>Free account, no card needed</li><li>Track every dispute live</li><li>Your documents stay private</li></ul></div>
+    <small>&copy; Stackly by Snab Solutions, Bengaluru</small>
+  </aside>
+  <main class="lg-form"><div class="lg-card">
+    <a class="lg-mob" href="index.html"><img src="https://wsrv.nl/?url=https://snabsolutions.in/wp-content/uploads/2026/02/stackly-snab-solutions.png&w=280&output=webp&q=85&fit=cover" alt="Stackly" width="120" height="40"></a>
+    <a class="back" href="login.html">&larr; Back to login</a>
+    <h2>Create your account</h2><p class="sub">It takes less than a minute.</p>
+    <div class="err" id="err" role="alert"></div>
+    <form id="f" novalidate>
+      <div class="fld"><label for="fname">Full name</label><input id="fname" name="fname" autocomplete="name" placeholder="e.g. Rohan Mehta"></div>
+      <div class="row2">
+        <div class="fld"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com"></div>
+        <div class="fld"><label for="phone">Mobile number</label><input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="98765 43210"></div>
+      </div>
+      <div class="fld"><label for="pw">Password</label><div class="pw"><input id="pw" name="pw" type="password" autocomplete="new-password" placeholder="At least 6 characters"><button type="button" id="eye">Show</button></div></div>
+      <div class="fld"><label for="pw2">Confirm password</label><input id="pw2" name="pw2" type="password" autocomplete="new-password" placeholder="Re-enter your password"></div>
+      <label class="chk" style="margin:0 0 18px;align-items:flex-start"><input type="checkbox" id="agree" style="margin-top:4px"> <span>I agree to the Terms and Privacy Policy, and consent to Stackly reviewing my credit report.</span></label>
+      <button class="btn btn-gold" type="submit">Create account</button>
+    </form>
+    <div class="lg-foot" style="justify-content:center"><span class="hint">Already have an account?</span><a class="lnk" href="login.html">Sign in</a></div>
+  </div></main>
+</div>
+<script src="js/auth.js"></script>
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s)};
+  var s=Stk.session(); if(s){location.replace(s.role==='admin'?'admin-dashboard.html':'client-dashboard.html');return}
+  function showErr(m,el){var e=$('#err');e.textContent=m;e.classList.add('show');e.scrollIntoView({block:'nearest',behavior:'smooth'});if(el)el.focus()}
+  $('#eye').onclick=function(){var p=$('#pw'),h=p.type==='password';p.type=h?'text':'password';this.textContent=h?'Hide':'Show'};
+  $('#f').addEventListener('submit',function(e){
+    e.preventDefault();
+    var name=$('#fname').value.trim(),email=$('#email').value.trim(),phone=$('#phone').value.trim(),pw=$('#pw').value;
+    if(name.length<2)return showErr('Please enter your full name.',$('#fname'));
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return showErr('Please enter a valid email address.',$('#email'));
+    if(phone.replace(/\D/g,'').length<10)return showErr('Please enter a valid 10 digit mobile number.',$('#phone'));
+    if(pw.length<6)return showErr('Password must be at least 6 characters.',$('#pw'));
+    if(pw!==$('#pw2').value)return showErr('Passwords do not match.',$('#pw2'));
+    if(!$('#agree').checked)return showErr('Please accept the terms to continue.');
+    var d=Stk.db();
+    if(d.clients.some(function(x){return x.email.toLowerCase()===email.toLowerCase()}))return showErr('An account with this email already exists. Try signing in.',$('#email'));
+    var id=Stk.next(d,'CL');
+    d.clients.push({id:id,name:name,email:email,phone:phone,pass:pw,score:600,plan:'Starter',status:'Active',joined:Stk.today()});
+    d.msgs.push({id:Stk.next(d,'M'),cid:id,from:'admin',text:'Welcome to Stackly! Upload your credit report and book a free review call to get started.',ts:Date.now(),read:false});
+    Stk.save(d);
+    var b=e.target.querySelector('button[type=submit]');b.disabled=true;b.textContent='Account created...';
+    location.replace('login.html?registered=1&id='+encodeURIComponent(id));
+  });
+})();
+</script></body></html>

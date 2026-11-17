@@ -20,6 +20,7 @@
       <button type="button" role="tab" data-role="client" class="on" aria-selected="true"><b>Client login</b><small>Track my credit case</small></button>
       <button type="button" role="tab" data-role="admin" aria-selected="false"><b>Admin login</b><small>Manage clients</small></button>
     </div>
+    <div class="okb" id="okb" role="status"></div>
     <div class="err" id="err" role="alert"></div>
     <form id="f" novalidate>
       <div class="fld"><label for="lid" id="lidL">Email or Login ID</label><input id="lid" autocomplete="username" placeholder="you@example.com" autocapitalize="none" spellcheck="false"></div>
@@ -28,7 +29,7 @@
       <button class="btn btn-gold" type="submit">Sign in</button>
     </form>
     <div class="demo" id="demo"></div>
-    <div class="lg-foot" id="signup"><span class="hint">New to Stackly?</span><button type="button" class="lnk" id="reg">Create a client account</button></div>
+    <div class="lg-foot" id="signup"><span class="hint">New to Stackly?</span><a class="lnk" id="reg" href="signup.html">Create a client account</a></div>
   </div></main>
 </div>
 <script src="js/auth.js"></script>
@@ -69,19 +70,7 @@
       c.pass=f.elements.pw.value;Stk.save(d);m.close();$('#lid').value=c.id;$('#pw').value='';Stk.toast('Password updated. You can sign in now.');
     };
   };
-  $('#reg').onclick=function(){
-    var m=Stk.modal('Create client account','<form id="gf"><div class="fld"><label>Full name</label><input name="fname" required></div><div class="row2"><div class="fld"><label>Email</label><input name="email" type="email" required></div><div class="fld"><label>Phone</label><input name="phone" inputmode="tel" required></div></div><div class="fld"><label>Password (min 6 characters)</label><input name="pw" type="password" minlength="6" required></div><div class="err" id="ge"></div><div class="mfoot"><button type="button" class="btn btn-line" data-x>Cancel</button><button class="btn btn-gold">Create account</button></div></form>');
-    m.el.querySelector('#gf').onsubmit=function(e){
-      e.preventDefault();var f=e.target,d=Stk.db(),er=m.el.querySelector('#ge');
-      if(d.clients.some(function(x){return x.email.toLowerCase()===f.elements.email.value.trim().toLowerCase()})){er.textContent='An account with this email already exists.';er.classList.add('show');return}
-      if(f.elements.pw.value.length<6){er.textContent='Password must be at least 6 characters.';er.classList.add('show');return}
-      var id=Stk.next(d,'CL');
-      d.clients.push({id:id,name:f.elements.fname.value.trim(),email:f.elements.email.value.trim(),phone:f.elements.phone.value.trim(),pass:f.elements.pw.value,score:600,plan:'Starter',status:'Active',joined:Stk.today()});
-      d.msgs.push({id:Stk.next(d,'M'),cid:id,from:'admin',text:'Welcome to Stackly! Upload your credit report and book a free review call to get started.',ts:Date.now(),read:false});
-      Stk.save(d);
-      m.el.querySelector('.mbody').innerHTML='<p class="cm">Account created. Your Login ID is <b style="font-size:1.2rem;letter-spacing:.05em">'+id+'</b>. Please note it down.</p><div class="mfoot"><button class="btn btn-gold" id="go">Continue to sign in</button></div>';
-      m.el.querySelector('#go').onclick=function(){m.close();setRole('client');$('#lid').value=id;$('#pw').focus()};
-    };
-  };
+  var q=new URLSearchParams(location.search);
+  if(q.get('registered')){var ok=$('#okb');ok.innerHTML='Account created! Your Login ID is <b>'+Stk.esc(q.get('id')||'')+'</b>. Sign in with your email or Login ID and password.';ok.classList.add('show');if(q.get('id'))$('#lid').value=q.get('id');setRole('client');$('#pw').focus()}
 })();
 </script></body></html>
