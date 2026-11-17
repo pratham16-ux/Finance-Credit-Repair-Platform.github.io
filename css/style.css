@@ -50,7 +50,7 @@ p{max-width:62ch}
 .hdr{position:fixed;inset:0 0 auto 0;z-index:80;padding:14px 0;padding-top:calc(14px + env(safe-area-inset-top));transition:background .4s,padding .4s,box-shadow .4s}
 .hdr.stuck{background:rgba(8,20,47,.82);backdrop-filter:blur(16px);padding:8px 0;box-shadow:0 10px 30px -15px rgba(0,0,0,.5)}
 .hdr .wrap{display:flex;align-items:center;justify-content:space-between;gap:24px}
-.logo img{height:46px;width:auto;filter:url(#stk-gold)}
+.logo img{height:55px;width:auto;filter:url(#stk-gold)}
 .nav{display:flex;gap:6px;align-items:center}
 .nav a{color:#DCE4F7;padding:10px 16px;border-radius:999px;font-weight:600;font-size:.95rem;position:relative;transition:color .3s,background .3s}
 .nav a:hover,.nav a.on{color:#fff;background:rgba(255,255,255,.1)}
